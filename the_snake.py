@@ -61,11 +61,12 @@ class Apple(GameObject):
     
     def __init__(self, body_color: tuple = (255, 0, 0)) -> None:
         super().__init__()
-        # self.randomize_position()
-        self.body_color = body_color
+        self.position = self.randomize_position()
+        self.body_color: tuple = body_color
+        
 
     def randomize_position(self):
-        self.position = (
+        return (
             randint(0, GRID_WIDTH) * GRID_SIZE,
             randint(0, GRID_HEIGHT) * GRID_SIZE
         )

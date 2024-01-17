@@ -1,4 +1,6 @@
 from random import choice, randint
+from typing import Optional, Union
+
 
 import pygame
 
@@ -49,7 +51,7 @@ class GameObject:
     def __init__(self) -> None:
         self.position: tuple = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
         # добавить пакет для типизации
-        self.body_color: tuple| None = None
+        self.body_color: Optional[tuple] = None
 
     def draw(self, surface) -> None:
         """Отрисовывает игровые объекты на игровом поле"""
@@ -61,11 +63,13 @@ class Snake(GameObject):
     def __init__(self, length: int = 1,
                  body_color: tuple = SNAKE_COLOR) -> None:
         super().__init__()
-        self.length = length
+        self.length: int = length
         self.positions: list = [self.position]
-        self.direction = 'вправо'
-        self.next_direction: None = None
+        self.direction: tuple = LEFT
+        # self.direction = choice([UP, DOWN, LEFT, RIGHT])  # Мои опции
+        self.next_direction: Optional[tuple[int, int]] = None
         self.body_color: tuple = body_color
+        self.last: Optional[tuple] = None
 
     def update_direction(self) -> None:
         """Обновляет направления движения змейки после нажатия на кнопку"""
@@ -78,7 +82,20 @@ class Snake(GameObject):
         голову в начало списка positions и удаляя последний элемент, если
         длина змейки не увеличилась
         """
-        pass
+        head_posirion = (self.positions[0][0] + self.direction[0] * GRID_SIZE,
+                         self.positions[0][1] + self.direction[1] * GRID_SIZE
+                         )
+        # Условия конца поля
+        if head_posirion[0] > SCREEN_WIDTH:
+            head_posirion = (0, head_posirion[1])
+        if head_posirion[0] < 0:
+            head_posirion = (SCREEN_WIDTH, head_posirion[1])
+        if head_posirion[1] > SCREEN_HEIGHT:
+            head_posirion = (head_posirion[0], 0)
+        if head_posirion[1] < 0:
+            head_posirion = (head_posirion[0], SCREEN_HEIGHT)
+        self.positions.insert(0, head_posirion)
+        self.last = self.positions.pop()
 
     def draw(self, surface) -> None:
         """Отрисовываю змейку на игровом поле"""
@@ -115,6 +132,7 @@ class Snake(GameObject):
         """
         pass
 
+
 class Apple(GameObject):
     """Класс игровых объектов Яблоко"""
 
@@ -147,6 +165,7 @@ def handle_keys(game_object):
             pygame.quit()
             raise SystemExit
         elif event.type == pygame.KEYDOWN:
+            print(event.key)
             if event.key == pygame.K_UP and game_object.direction != DOWN:
                 game_object.next_direction = UP
             elif event.key == pygame.K_DOWN and game_object.direction != UP:
@@ -162,20 +181,20 @@ def main():
     # Тут нужно создать экземпляры классов.
     snake = Snake()
     apple = Apple()
-    apple.draw(screen)
-    game = GameObject()
-    game.draw(screen)
-    ...
 
     while True:
         clock.tick(SPEED)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return
         # Тут опишите основную логику игры.
-        # ...
+        snake.draw(screen)
+        handle_keys(snake)
+        snake.update_direction()
+        snake.move()
+        apple.draw(screen)
+        # проверка села ли яблоко
+        # проверка столкновения
+        # отрисовка объектов
+
         pygame.display.update()
 
 

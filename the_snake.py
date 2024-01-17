@@ -32,7 +32,7 @@ APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 20
+SPEED = 5
 
 # Настройка игрового окна:
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -66,7 +66,6 @@ class Snake(GameObject):
         self.length: int = length
         self.positions: list = [self.position]
         self.direction: tuple = LEFT
-        # self.direction = choice([UP, DOWN, LEFT, RIGHT])  # Мои опции
         self.next_direction: Optional[tuple[int, int]] = None
         self.body_color: tuple = body_color
         self.last: Optional[tuple] = None
@@ -123,14 +122,21 @@ class Snake(GameObject):
         """Возвращает позицию головы змейки - первый элемент в списке
         positions
         """
-        pass
-        return tuple()
+        return self.positions[0]
+
+    def check_collision(self):
+        """Проверяет столкновение"""
+        if self.get_head_position() in self.positions[1:]:
+            self.reset()
+            return True
 
     def reset(self) -> None:
         """Cбрасывает змейку в начальное состояние после столкновения с
         собой
         """
-        pass
+        self.positions = [self.position]
+        self.direction = choice([UP, DOWN, LEFT, RIGHT])
+        screen.fill(BOARD_BACKGROUND_COLOR)
 
 
 class Apple(GameObject):
@@ -144,8 +150,8 @@ class Apple(GameObject):
     def randomize_position(self) -> None:
         """Устанавливает случайное положение яблока на игровом поле"""
         self.position = (
-            randint(0, GRID_WIDTH) * GRID_SIZE,
-            randint(0, GRID_HEIGHT) * GRID_SIZE
+            randint(0, GRID_WIDTH - GRID_SIZE) * GRID_SIZE,
+            randint(0, GRID_HEIGHT - GRID_SIZE) * GRID_SIZE
         )
 
     def draw(self, surface) -> None:
@@ -176,6 +182,17 @@ def handle_keys(game_object):
                 game_object.next_direction = RIGHT
 
 
+def had_ate(object_eat, object_eater):
+    """Проверяет события поедания объекта"""
+    if object_eat.position == object_eater.get_head_position():
+        object_eater.positions.insert(-1, object_eater.last)
+        while True:
+            object_eat.randomize_position()
+            if object_eat.position not in object_eater.positions:
+                break
+        object_eat.draw(screen)
+
+
 def main():
     """Выполняется если the_snake запущен напрямую"""
     # Тут нужно создать экземпляры классов.
@@ -185,17 +202,17 @@ def main():
     while True:
         clock.tick(SPEED)
 
-        # Тут опишите основную логику игры.
+        # Рисуем объекты
         snake.draw(screen)
+        apple.draw(screen)
+        pygame.display.update()
+        # Отслеживаем изменения
         handle_keys(snake)
         snake.update_direction()
         snake.move()
-        apple.draw(screen)
-        # проверка села ли яблоко
-        # проверка столкновения
-        # отрисовка объектов
-
-        pygame.display.update()
+        had_ate(apple, snake)
+        if snake.check_collision():
+            continue
 
 
 if __name__ == '__main__':

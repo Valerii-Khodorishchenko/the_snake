@@ -82,7 +82,7 @@ class Snake(GameObject):
         self.new_game_length: int = length
         self.length: int = self.new_game_length
         self.positions: list = [self.position]
-        self.direction: tuple = LEFT
+        self.direction: tuple = RIGHT
         self.next_direction: Optional[tuple[int, int]] = None
         self.body_color: tuple = body_color
         self.last: Optional[tuple] = None
@@ -229,7 +229,6 @@ def main():
         # на 1 за 5 съеденных яблок
         game_speed = SPEED + snake.length // 5
         clock.tick(game_speed)
-        print(game_speed)
         # Отслеживаем изменения
         handle_keys(snake)
         snake.update_direction()

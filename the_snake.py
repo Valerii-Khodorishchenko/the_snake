@@ -1,5 +1,19 @@
+"""THE_SNAKE.
+Модуль представляет собой реализацию игры The snake.
+Предпологается, что этот модуль будет запускаться на прямую.
+Основной цикл модуля реализован в функции main().
+
+Классы:
+GameObject - родительский для всех игровых объектов.
+Snake - дочерний класс реализующий игровой объект змейка.
+Apple - дочерний класс реализующий игровой объект яблоко.
+
+Функции:
+handle_keys - отслеживает действий пользователя
+had_ate - логика поведения объектов при поедании объектом змейка
+"""
 from random import choice, randint
-from typing import Optional, Union
+from typing import Optional
 
 
 import pygame
@@ -63,7 +77,10 @@ class Snake(GameObject):
     def __init__(self, length: int = 1,
                  body_color: tuple = SNAKE_COLOR) -> None:
         super().__init__()
-        self.length: int = length
+        # Возможность при создания объекта указать длинну змейки,
+        # По умолчанию length = 1.
+        self.new_game_length: int = length
+        self.length: int = self.new_game_length
         self.positions: list = [self.position]
         self.direction: tuple = LEFT
         self.next_direction: Optional[tuple[int, int]] = None
@@ -85,16 +102,20 @@ class Snake(GameObject):
                          self.positions[0][1] + self.direction[1] * GRID_SIZE
                          )
         # Условия конца поля
-        if head_posirion[0] > SCREEN_WIDTH:
+        if head_posirion[0] >= SCREEN_WIDTH:
             head_posirion = (0, head_posirion[1])
         if head_posirion[0] < 0:
-            head_posirion = (SCREEN_WIDTH, head_posirion[1])
-        if head_posirion[1] > SCREEN_HEIGHT:
+            head_posirion = (SCREEN_WIDTH - GRID_SIZE, head_posirion[1])
+        if head_posirion[1] >= SCREEN_HEIGHT:
             head_posirion = (head_posirion[0], 0)
         if head_posirion[1] < 0:
-            head_posirion = (head_posirion[0], SCREEN_HEIGHT)
+            head_posirion = (head_posirion[0], SCREEN_HEIGHT - GRID_SIZE)
+        past_length: int = len(self.positions)
         self.positions.insert(0, head_posirion)
-        self.last = self.positions.pop()
+        if self.length <= past_length:
+            self.last = self.positions.pop()
+        else:
+            self.last = None
 
     def draw(self, surface) -> None:
         """Отрисовываю змейку на игровом поле"""
@@ -124,11 +145,14 @@ class Snake(GameObject):
         """
         return self.positions[0]
 
-    def check_collision(self):
+    def check_collision(self) -> Optional[bool]:
         """Проверяет столкновение"""
         if self.get_head_position() in self.positions[1:]:
+            self.length = self.new_game_length
             self.reset()
             return True
+        else:
+            return None
 
     def reset(self) -> None:
         """Cбрасывает змейку в начальное состояние после столкновения с
@@ -171,7 +195,6 @@ def handle_keys(game_object):
             pygame.quit()
             raise SystemExit
         elif event.type == pygame.KEYDOWN:
-            print(event.key)
             if event.key == pygame.K_UP and game_object.direction != DOWN:
                 game_object.next_direction = UP
             elif event.key == pygame.K_DOWN and game_object.direction != UP:
@@ -182,30 +205,28 @@ def handle_keys(game_object):
                 game_object.next_direction = RIGHT
 
 
-def had_ate(object_eat, object_eater):
+def had_ate(object_eat, object_eater) -> None:
     """Проверяет события поедания объекта"""
     if object_eat.position == object_eater.get_head_position():
-        object_eater.positions.insert(-1, object_eater.last)
+        object_eater.length += 1
+        object_eater.draw(screen)
+        object_eater.move()
+
         while True:
             object_eat.randomize_position()
             if object_eat.position not in object_eater.positions:
                 break
-        object_eat.draw(screen)
 
 
 def main():
     """Выполняется если the_snake запущен напрямую"""
     # Тут нужно создать экземпляры классов.
-    snake = Snake()
+    snake = Snake(5)
     apple = Apple()
+
 
     while True:
         clock.tick(SPEED)
-
-        # Рисуем объекты
-        snake.draw(screen)
-        apple.draw(screen)
-        pygame.display.update()
         # Отслеживаем изменения
         handle_keys(snake)
         snake.update_direction()
@@ -213,6 +234,10 @@ def main():
         had_ate(apple, snake)
         if snake.check_collision():
             continue
+        # Рисуем объекты
+        snake.draw(screen)
+        apple.draw(screen)
+        pygame.display.update()
 
 
 if __name__ == '__main__':

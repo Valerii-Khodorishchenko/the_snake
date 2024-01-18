@@ -224,9 +224,12 @@ def main():
     snake = Snake(5)
     apple = Apple()
 
-
     while True:
-        clock.tick(SPEED)
+        # Изменение скорости с ростом змейки
+        # на 1 за 5 съеденных яблок
+        game_speed = SPEED + snake.length // 5
+        clock.tick(game_speed)
+        print(game_speed)
         # Отслеживаем изменения
         handle_keys(snake)
         snake.update_direction()

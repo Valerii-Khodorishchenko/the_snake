@@ -43,10 +43,11 @@ LEFT = (-1, 0)
 RIGHT = (1, 0)
 
 # Цвета
-BOARD_BACKGROUND_COLOR = (0, 0, 0)
+BOARD_BACKGROUND_COLOR = (200, 200, 200)
 BORDER_COLOR = (93, 216, 228)
 APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
+# TODO:Хочу сделать BORDER_COLOR черным
 
 # Пораметры игры:
 SPEED = 5
@@ -56,6 +57,7 @@ SNAKE_LENGH = 5
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 pg.display.set_caption('Змейка')
 clock = pg.time.Clock()
+screen.fill(BOARD_BACKGROUND_COLOR)
 
 
 class GameObject:
@@ -68,6 +70,16 @@ class GameObject:
 
     def draw(self, surface) -> None:
         """Отрисовывает игровые объекты на игровом поле"""
+
+    def draw_one_cell(self, surface, position, color=None):
+        """По координатам отрисовываю ячейку заданного цвета"""
+        if color is None:
+            color = self.body_color
+        
+        rect = (pg.Rect((position[0], position[1]), (GRID_SIZE, GRID_SIZE)))
+        pg.draw.rect(surface, self.body_color, rect)
+        pg.draw.rect(surface, BORDER_COLOR, rect, 1)
+        pass
 
 
 class Snake(GameObject):

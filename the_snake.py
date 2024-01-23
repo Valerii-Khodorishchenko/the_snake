@@ -112,18 +112,15 @@ class Snake(GameObject):
         голову в начало списка positions и удаляя последний элемент, если
         длина змейки не увеличилась
         """
-        head_position = (self.positions[0][0] + self.direction[0] * GRID_SIZE,
-                         self.positions[0][1] + self.direction[1] * GRID_SIZE
-                         )
-        # Условия конца поля
-        if head_position[0] >= SCREEN_WIDTH:
-            head_position = (0, head_position[1])
-        if head_position[0] < 0:
-            head_position = (SCREEN_WIDTH - GRID_SIZE, head_position[1])
-        if head_position[1] >= SCREEN_HEIGHT:
-            head_position = (head_position[0], 0)
-        if head_position[1] < 0:
-            head_position = (head_position[0], SCREEN_HEIGHT - GRID_SIZE)
+        x_position = ((self.positions[0][0] + self.direction[0] * GRID_SIZE) %
+                      SCREEN_WIDTH)
+        y_position = ((self.positions[0][1] + self.direction[1] * GRID_SIZE) %
+                      SCREEN_HEIGHT)
+        head_position = (x_position + SCREEN_WIDTH if (x_position) < 0
+                         else x_position,
+                         y_position + SCREEN_HEIGHT if (y_position) < 0
+                         else y_position)
+
         past_length: int = len(self.positions)
         self.positions.insert(0, head_position)
         if self.length <= past_length:

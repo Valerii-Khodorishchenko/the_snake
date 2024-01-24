@@ -21,7 +21,7 @@ SNAKE_LENGH
 Случайный выбор направления при новом старте в методе reset
 класса Snake
 """
-from random import choice, randint
+from random import randint, randrange
 from typing import Optional
 
 
@@ -44,23 +44,17 @@ LEFT = (-1, 0)
 RIGHT = (1, 0)
 
 # Цвета
-BOARD_BACKGROUND_COLOR = (0, 0, 0)
-# BOARD_BACKGROUND_COLOR = (200, 200, 200)
-BORDER_COLOR = (0, 0, 0)
-# BORDER_COLOR = (93, 216, 228)
+BOARD_BACKGROUND_COLOR = (200, 200, 220)
+BORDER_COLOR = (200, 200, 220)
 APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
-# TODO: Хочу сделать BORDER_COLOR черным.
 
 # Пораметры игры:
-SPEED = 5
-SNAKE_LENGHT = 5  # На мой взгляд не лишняя, как настройка, 
-# задаёт длину по умолчпнию
-# FIXME: Исправить или написать ревьюеру.
+SPEED = 10
 
 # Настройка игрового окна:
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
-pg.display.set_caption('Змейка')
+pg.display.set_caption("Змейка. Для выхода из игры нажмите ESC.")
 clock = pg.time.Clock()
 screen.fill(BOARD_BACKGROUND_COLOR)
 
@@ -68,94 +62,73 @@ screen.fill(BOARD_BACKGROUND_COLOR)
 class GameObject:
     """Базовый класс игровых объектов"""
 
-    def __init__(self, body_color: Optional[tuple] = None) -> None:
+    def __init__(self, body_color=None) -> None:
         self.position: tuple = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
         # добавить пакет для типизации
         self.body_color = body_color
-        self.last = None
+        self.last: Optional[tuple] = None
 
-    def draw(self) -> None:
+    def draw(self, color=None) -> None:
         """Отрисовывает игровые объекты на игровом поле"""
-        rect = (pg.Rect((self.position), (GRID_SIZE, GRID_SIZE)))
-        pg.draw.rect(screen, self.body_color, rect)
-        pg.draw.rect(screen, BORDER_COLOR, rect, 1)
-
         # Затирание последнего сегмента
         if self.last:
             last_rect = pg.Rect(self.last, (GRID_SIZE, GRID_SIZE))
             pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
-
-    # def draw_one_cell(self, screen, position, color=None):
-    #     """По координатам отрисовываю ячейку заданного цвета"""
-    #     if color is None:
-    #         color = self.body_color
-        
-
-    #     rect = (pg.Rect((position[0], position[1]), (GRID_SIZE, GRID_SIZE)))
-    #     pg.draw.rect(screen, self.body_color, rect)
-    #     pg.draw.rect(screen, BORDER_COLOR, rect, 1)
-    #     # TODO: Исправлено, доделать вызов.
-    #     pass
+        # Отрисовка нового сегмента
+        if color is None:
+            color = self.body_color
+        rect = pg.Rect((self.position), (GRID_SIZE, GRID_SIZE))
+        pg.draw.rect(screen, color, rect)
+        pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
 class Snake(GameObject):
     """Класс игровых объектов Змейка"""
 
-    def __init__(self, length: int = SNAKE_LENGHT,
-                 body_color: tuple = SNAKE_COLOR) -> None:
+    def __init__(
+        self, length: Optional[int] = None, body_color: tuple = SNAKE_COLOR
+    ) -> None:
         super().__init__(body_color)
         # Возможность при создания объекта указать длинну змейки,
-        self.length: int = length
+        self.length: int = 5 if length is None else length
         self.positions: list = [self.position]
         self.direction: tuple = RIGHT
-        self.next_direction: Optional[tuple[int, int]] = None
-        # FIXME: лишнее поле
-        # Избавьтесь от поля .next_direction.
-        # Вместо этого получайте новое направление через параметр метода.·
-        self.last: Optional[tuple] = None  # FIXME: сделать что нибудь с last
 
-    def update_direction(self) -> None:
+    def update_direction(self, direction) -> None:
         """Обновляет направления движения змейки после нажатия на кнопку"""
-        if self.next_direction:
-            self.direction = self.next_direction
-            self.next_direction = None
+        self.direction = direction
 
     def move(self) -> None:
         """Обновляет позицию змейки (координаты каждой секции), добавляя новую
         голову в начало списка positions и удаляя последний элемент, если
         длина змейки не увеличилась
         """
-        # self.position = self.get_head_position()
-        self.position = self.positions[0]
-
-        x_position = ((self.positions[0][0] + self.direction[0] * GRID_SIZE) %
-                      SCREEN_WIDTH)
-        y_position = ((self.positions[0][1] + self.direction[1] * GRID_SIZE) %
-                      SCREEN_HEIGHT)
-        head_position = (x_position + SCREEN_WIDTH if (x_position) < 0
-                         else x_position,
-                         y_position + SCREEN_HEIGHT if (y_position) < 0
-                         else y_position)
+        x_position = ((self.position[0] + self.direction[0] * GRID_SIZE)
+                      % SCREEN_WIDTH)
+        y_position = ((self.position[1] + self.direction[1] * GRID_SIZE)
+                      % SCREEN_HEIGHT)
+        self.position = (
+            x_position + SCREEN_WIDTH if (x_position) < 0 else x_position,
+            y_position + SCREEN_HEIGHT if (y_position) < 0 else y_position,
+        )
 
         past_length: int = len(self.positions)
-        self.positions.insert(0, head_position)
+        self.positions.insert(0, self.position)
         if self.length <= past_length:
             self.last = self.positions.pop()
         else:
             self.last = None
 
-    # def draw(self, screen) -> None:
-    #     """Отрисовываю змейку на игровом поле"""
-    #     # TODO: удали перед ревью, если не будешь менять цвета
-    #     # for position in self.positions[:-1]:
-    #     #     rect = (
-    #     #         pg.Rect((position[0], position[1]), (GRID_SIZE, GRID_SIZE))
-    #     #     )
-    #     #     color = (0, randrange(150, 255, 5), 0)
-    #     #     pg.draw.rect(screen, color, rect)
-    #     #     pg.draw.rect(screen, BORDER_COLOR, rect, 1)
-
+    def draw_body(self) -> None:
+        """Дополнительно придаёт телу змейки эффект движения"""
+        for position in self.positions[:-1]:
+            rect = (
+                pg.Rect((position[0], position[1]), (GRID_SIZE, GRID_SIZE))
+            )
+            color = (randrange(0, 55, 5), randrange(150, 255, 5), 0)
+            pg.draw.rect(screen, color, rect)
+            pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
     def get_head_position(self) -> tuple:
         """Возвращает позицию головы змейки - первый элемент в списке
@@ -163,12 +136,15 @@ class Snake(GameObject):
         """
         return self.positions[0]
 
+    def draw_damage(self):
+        """Рисую клетку, в которой змея получила повреждение"""
+        self.draw(APPLE_COLOR)
+        pg.display.update()
+
     def check_collision(self) -> bool:
         """Проверяет столкновение"""
         if self.get_head_position() in self.positions[3:]:
-            self.length = SNAKE_LENGHT
-            screen.fill(BOARD_BACKGROUND_COLOR)
-            self.reset()
+            self.draw_damage()
             return True
         return False
 
@@ -176,9 +152,8 @@ class Snake(GameObject):
         """Cбрасывает змейку в начальное состояние после столкновения с
         собой
         """
+        self.length = 10
         self.positions = [self.position]
-
-        self.direction = choice([UP, DOWN, LEFT, RIGHT])
         screen.fill(BOARD_BACKGROUND_COLOR)
 
 
@@ -186,18 +161,23 @@ class Apple(GameObject):
     """Класс игровых объектов Яблоко"""
 
     def __init__(self, body_color: tuple = APPLE_COLOR) -> None:
-        super().__init__()
-        self.randomize_position()
-        self.body_color: tuple = body_color
+        super().__init__(body_color)
+        # Начальная позиция всех объектов, в том числе головы змейки.
+        # Передовать объект змейка нет необходимости
+        position = self.position
+        self.randomize_position(position)
 
-    def randomize_position(self, eater=None) -> None:
+    def randomize_position(self, positions) -> None:
         """Устанавливает случайное положение яблока на игровом поле"""
         while True:
             self.position = (
                 randint(0, GRID_WIDTH - 1) * GRID_SIZE,
-                randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+                randint(0, GRID_HEIGHT - 1) * GRID_SIZE,
             )
-            if eater is None or self.position not in eater.positions:
+            if isinstance(positions, tuple) and self.position != positions:
+                break
+            elif (isinstance(positions, list)
+                  and self.position is not positions):
                 break
 
 
@@ -212,26 +192,30 @@ def handle_keys(game_object):
                 LEFT: {pg.K_UP: UP, pg.K_DOWN: DOWN},
                 RIGHT: {pg.K_UP: UP, pg.K_DOWN: DOWN},
                 UP: {pg.K_LEFT: LEFT, pg.K_RIGHT: RIGHT},
-                DOWN: {pg.K_LEFT: LEFT, pg.K_RIGHT: RIGHT}
+                DOWN: {pg.K_LEFT: LEFT, pg.K_RIGHT: RIGHT},
             }
-            if event.key in dict_directions[game_object.direction]:
-                game_object.next_direction = (
-                    dict_directions[game_object.direction][event.key])
+            if event.key == pg.K_ESCAPE:
+                pg.quit()
+                sys.exit()
+
+            elif event.key in dict_directions[game_object.direction]:
+                direction = dict_directions[game_object.direction][event.key]
+                return game_object.update_direction(direction)
 
 
 def had_ate(object_eat, object_eater) -> None:
     """Проверяет события поедания объекта"""
     if object_eat.position == object_eater.get_head_position():
         object_eater.length += 1
-        object_eater.draw()
-        object_eater.move()
-        object_eat.randomize_position(object_eater)
+        object_eat.randomize_position(object_eater.positions)
 
 
 def main():
     """Выполняется если the_snake запущен напрямую"""
-    snake = Snake()
+    snake = Snake(10)
     apple = Apple()
+    points = 0
+    max_points = 0
 
     while True:
         # Изменение скорости с ростом змейки
@@ -240,17 +224,25 @@ def main():
         clock.tick(game_speed)
         # Отслеживаем изменения
         handle_keys(snake)
-        snake.update_direction()
         snake.move()
         had_ate(apple, snake)
         if snake.check_collision():
+            snake.reset()
+            points = 0
             continue
         # Рисуем объекты
         snake.draw()
+        snake.draw_body()
         apple.draw()
-        print()
+
+        points = snake.length
+        max_points = max_points if max_points > points else points
+        pg.display.set_caption(
+            "Змейка. Для выхода из игры нажмите ESC."
+            f"Длина змейки: {points}. Рекорд: {max_points}"
+        )
         pg.display.update()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

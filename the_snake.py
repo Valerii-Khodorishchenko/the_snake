@@ -222,7 +222,7 @@ def main():
         # на 1 за 5 съеденных яблок
         game_speed = SPEED + snake.length // 5
         clock.tick(game_speed)
-        # Отслеживаем изменения
+
         handle_keys(snake)
         snake.move()
         had_ate(apple, snake)
@@ -230,7 +230,7 @@ def main():
             snake.reset()
             points = 0
             continue
-        # Рисуем объекты
+
         snake.draw()
         snake.draw_body()
         apple.draw()

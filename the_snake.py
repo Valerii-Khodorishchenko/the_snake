@@ -66,7 +66,6 @@ class GameObject:
 
     def __init__(self, body_color=None) -> None:
         self.position: tuple = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
-        # добавить пакет для типизации
         self.body_color = body_color
         self.last: Optional[tuple] = None
 
@@ -84,13 +83,17 @@ class Snake(GameObject):
     """Класс игровых объектов Змейка"""
 
     def __init__(
-        self, length: Optional[int] = None, body_color: tuple = SNAKE_COLOR
+        self, length: int = 1, body_color: tuple = SNAKE_COLOR
     ) -> None:
         super().__init__(body_color)
-        # Возможность при создания объекта указать длинну змейки,
-        self.length: int = 5 if length is None else length
+
+        self.length = length
         self.positions: list = [self.position]
         self.direction: tuple = RIGHT
+        # Значения переменных для self.reset().
+        self.reset_length = length
+        self.reset_position = tuple(self.position)
+        self.reset_direction = tuple(self.direction)
 
     def update_direction(self, direction) -> None:
         """Обновляет направления движения змейки после нажатия на кнопку"""
@@ -162,8 +165,10 @@ class Snake(GameObject):
         """Cбрасывает змейку в начальное состояние после столкновения с
         собой
         """
-        self.length = 10
+        self.length = self.reset_length
+        self.position = self.reset_position
         self.positions = [self.position]
+        self.direction = self.reset_direction
         screen.fill(BOARD_BACKGROUND_COLOR)
 
 

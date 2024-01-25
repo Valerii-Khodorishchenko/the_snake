@@ -22,6 +22,7 @@ SNAKE_LENGH
 класса Snake
 """
 from random import randint, randrange
+from time import sleep
 from typing import Optional
 
 
@@ -48,6 +49,7 @@ BOARD_BACKGROUND_COLOR = (200, 200, 220)
 BORDER_COLOR = (200, 200, 220)
 APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
+SNAKE_BLOOD_COLOR = (230, 66, 245)
 
 # Пораметры игры:
 SPEED = 10
@@ -70,11 +72,6 @@ class GameObject:
 
     def draw(self, color=None) -> None:
         """Отрисовывает игровые объекты на игровом поле"""
-        # Затирание последнего сегмента
-        if self.last:
-            last_rect = pg.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
-
         # Отрисовка нового сегмента
         if color is None:
             color = self.body_color
@@ -120,6 +117,17 @@ class Snake(GameObject):
         else:
             self.last = None
 
+    def draw(self, color=None) -> None:
+        """Рисует змейку"""
+        # Затирание последнего сегмента
+        if self.last:
+            last_rect = pg.Rect(self.last, (GRID_SIZE, GRID_SIZE))
+            pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+
+        self.draw_body()
+
+        super().draw(color)
+
     def draw_body(self) -> None:
         """Дополнительно придаёт телу змейки эффект движения"""
         for position in self.positions[:-1]:
@@ -138,13 +146,15 @@ class Snake(GameObject):
 
     def draw_damage(self):
         """Рисую клетку, в которой змея получила повреждение"""
-        self.draw(APPLE_COLOR)
+        self.draw(SNAKE_BLOOD_COLOR)
         pg.display.update()
 
     def check_collision(self) -> bool:
         """Проверяет столкновение"""
         if self.get_head_position() in self.positions[3:]:
             self.draw_damage()
+            sleep(1)
+            self.reset()
             return True
         return False
 
@@ -227,12 +237,9 @@ def main():
         snake.move()
         had_ate(apple, snake)
         if snake.check_collision():
-            snake.reset()
             points = 0
             continue
-
         snake.draw()
-        snake.draw_body()
         apple.draw()
 
         points = snake.length

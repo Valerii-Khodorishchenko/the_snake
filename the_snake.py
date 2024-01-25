@@ -50,6 +50,7 @@ BORDER_COLOR = (200, 200, 220)
 APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
 SNAKE_BLOOD_COLOR = (230, 66, 245)
+SKIN_COLOR = (64, 13, 4)
 
 # Пораметры игры:
 SPEED = 10
@@ -72,6 +73,8 @@ class GameObject:
     def draw(self, color=None) -> None:
         """Отрисовывает игровые объекты на игровом поле"""
         # Отрисовка нового сегмента
+        if self.position is None:
+            return
         if color is None:
             color = self.body_color
         rect = pg.Rect((self.position), (GRID_SIZE, GRID_SIZE))
@@ -115,8 +118,14 @@ class Snake(GameObject):
 
         past_length: int = len(self.positions)
         self.positions.insert(0, self.position)
-        if self.length <= past_length:
+        if self.length == past_length:
             self.last = self.positions.pop()
+        elif self.length < past_length:
+            # Для кожи
+            self.last = self.positions.pop()
+            self.draw()
+            self.last = self.positions.pop()
+            print(f'{self.last =}' )
         else:
             self.last = None
 
@@ -152,6 +161,27 @@ class Snake(GameObject):
         self.draw(SNAKE_BLOOD_COLOR)
         pg.display.update()
 
+    def ate(self, apple, skin) -> None:
+        """Проверяет события поедания объекта"""
+        last = self.last
+        if apple.position == self.get_head_position():
+            self.length += 1
+            apple.randomize_position(self.positions)
+            if not self.length % 5:
+                skin.add_skin(last)
+
+        for skin_position in list(skin.positions):
+            if skin_position == self.get_head_position():
+                self.length -= 1
+                if self.length == 1:
+                    skin.positions = set()
+                    sleep(1)
+                    self.reset()
+                    return
+                skin.positions.discard(self.get_head_position())
+                skin.add_skin(self.positions[-2])
+                skin.add_skin(self.positions[-1])
+
     def check_collision(self) -> bool:
         """Проверяет столкновение"""
         if self.get_head_position() in self.positions[3:]:
@@ -180,6 +210,7 @@ class Apple(GameObject):
         # Начальная позиция всех объектов, в том числе головы змейки.
         # Передовать объект змейка нет необходимости
         position = self.position
+        self.edible = True
         self.randomize_position(position)
 
     def randomize_position(self, positions) -> None:
@@ -194,6 +225,27 @@ class Apple(GameObject):
             elif (isinstance(positions, list)
                   and self.position is not positions):
                 break
+
+
+class Skins(GameObject):
+    """Класс игровых объектов Кожа"""
+
+    def __init__(self, body_color: tuple = SKIN_COLOR) -> None:
+        super().__init__(body_color)
+        self.edible = False
+        self.position = None
+        self.positions = set()
+
+    def add_skin(self, position):
+        self.position = position
+        self.positions.add(self.position)
+        # self.draw()
+        print(f'{self.position = } {self.positions = }')
+    
+    def draw(self):
+        for self.position in self.positions:
+            super().draw()
+
 
 
 def handle_keys(game_object):
@@ -218,17 +270,15 @@ def handle_keys(game_object):
                 return game_object.update_direction(direction)
 
 
-def had_ate(object_eat, object_eater) -> None:
-    """Проверяет события поедания объекта"""
-    if object_eat.position == object_eater.get_head_position():
-        object_eater.length += 1
-        object_eat.randomize_position(object_eater.positions)
 
 
 def main():
     """Выполняется если the_snake запущен напрямую"""
     snake = Snake(10)
     apple = Apple()
+    skin = Skins()
+    # walls = Walls()
+
     points = 0
     max_points = 0
 
@@ -240,12 +290,13 @@ def main():
 
         handle_keys(snake)
         snake.move()
-        had_ate(apple, snake)
+        snake.ate(apple, skin)
         if snake.check_collision():
             points = 0
             continue
         snake.draw()
         apple.draw()
+        skin.draw()
 
         points = snake.length
         max_points = max_points if max_points > points else points

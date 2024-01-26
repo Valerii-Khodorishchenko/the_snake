@@ -277,7 +277,7 @@ class Walls(GameObject):
     def __init__(self, body_color: tuple = WALLS_COLOR) -> None:
         super().__init__(body_color)
         self.positions = list()
-        self.position = tuple()
+        self.position = None
 
     def randomize_position(self, positions) -> None:
         """Устанавливает случайное положение яблока на игровом поле"""

@@ -201,7 +201,7 @@ class Apple(GameObject):
         super().__init__(body_color)
         # Начальная позиция всех объектов, если она не переопределена, в том
         # числе голова змейки. Передовать объект змейка нет необходимости.
-        self.randomize_position([self.position]) 
+        self.randomize_position([self.position])
         # Теперь метод .randomize_position() в родительском классе
 
     def reset(self):
@@ -258,17 +258,17 @@ class Walls(GameObject):
         super().randomize_position(positions)
         self.positions.append(self.position)
 
-    def reset(self):
-        """Отчищает множество позиций"""
-        super().reset()
-        self.position = None
-        self.positions = list()
-
     def draw(self):
         """Рисую стену, если она есть, которая не стоит на Яблоке,
         которое не стоит на Змейке.
         """
         super().draw_one_cell()
+
+    def reset(self):
+        """Отчищает множество позиций"""
+        super().reset()
+        self.position = None
+        self.positions = list()
 
 
 def ate(snake, apple, skin, walls):

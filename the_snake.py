@@ -9,17 +9,17 @@ Snake - дочерний класс реализующий игровой объ
 Apple - дочерний класс реализующий игровой объект яблоко.
 
 Функции:
-handle_keys - отслеживает действий пользователя
-had_ate - логика поведения объектов при поедании объектом змейка
+handle_keys - отслеживает действий пользователя.
+had_ate - логика поведения объектов при поедании объектом змейка.
 
 Для ревьюера:
 По мимо основного задания реализован выбрдлины змейки константой
-SNAKE_LENGH
+SNAKE_LENGH.
 
-Изменение скорости в функции main()
+Изменение скорости в функции main().
 
 Случайный выбор направления при новом старте в методе reset
-класса Snake
+класса Snake.
 """
 from random import randint, randrange
 
@@ -101,7 +101,7 @@ class GameObject:
 
 
 class Snake(GameObject):
-    """Класс игровых объектов Змейка"""
+    """Класс игровых объектов Змейка."""
 
     def __init__(self, body_color: tuple = SNAKE_COLOR) -> None:
         super().__init__(body_color)
@@ -112,7 +112,7 @@ class Snake(GameObject):
         self.last = None
 
     def update_direction(self, direction) -> None:
-        """Обновляет направления движения змейки после нажатия на кнопку"""
+        """Обновляет направления движения змейки после нажатия на кнопку."""
         self.direction = direction
 
     def move(self) -> None:
@@ -138,7 +138,7 @@ class Snake(GameObject):
             self.last = None
 
     def draw(self):
-        """Рисуем змейку целеком"""
+        """Рисуем змейку целеком."""
         # Затирание последнего сегмента.
         if self.last:
             self.draw_cell(self.last, BOARD_BACKGROUND_COLOR)
@@ -150,18 +150,18 @@ class Snake(GameObject):
         self.draw_cell(self.position)
 
     def draw_damage(self):
-        """Рисую клетку, в которой змея получила повреждение"""
+        """Рисую клетку, в которой змея получила повреждение."""
         self.draw_cell(self.get_head_position(), SNAKE_BLOOD_COLOR)
         pg.display.update()
 
     def get_head_position(self) -> tuple:
         """Возвращает позицию головы змейки - первый элемент в списке
-        positions
+        positions.
         """
         return self.positions[0]
 
     def check_collision(self, walls) -> bool:
-        """Проверяет столкновение"""
+        """Проверяет столкновение."""
         if self.get_head_position() in self.positions[4:] + walls.positions:
             self.draw_damage()
             return True
@@ -169,7 +169,7 @@ class Snake(GameObject):
 
     def reset(self) -> None:
         """Cбрасывает змейку в начальное состояние после столкновения с
-        собой
+        собой.
         """
         self.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.positions = [self.position]
@@ -178,12 +178,10 @@ class Snake(GameObject):
 
 
 class Apple(GameObject):
-    """Класс игровых объектов Яблоко"""
+    """Класс игровых объектов Яблоко."""
 
     def __init__(self, busy, body_color: tuple = APPLE_COLOR) -> None:
         super().__init__(body_color)
-        self.position = (1, 1)
-        self.busy = busy
         self.busy_positions = [busy]
         self.randomize_position(self.busy_positions)
 
@@ -194,7 +192,7 @@ class Apple(GameObject):
         self.randomize_position(self.busy_positions)
 
     def draw(self):
-        """Рисую яблоко"""
+        """Рисую яблоко."""
         self.draw_cell(self.position)
 
 
@@ -206,34 +204,32 @@ class Skins(GameObject):
         self.positions = set()
 
     def add_skin(self, position):
-        """Добавляет сброшенную кожу"""
+        """Добавляет сброшенную кожу."""
         self.positions.add(position)
 
     def draw(self):
         """Рисую сброшенную кожу, которая всегда остаётся за змейкой,
-        и никогда не стоит на Змейке, которая стоит на Яблоке
+        и никогда не стоит на Змейке, которая стоит на Яблоке.
         """
-        if len(self.positions) != 0:
-            for position in self.positions:
-                self.draw_cell(position)
+        for position in self.positions:
+            self.draw_cell(position)
         # Когда змейка съедает кожу, она травится, и сбрасывает
         # в два раза больше кожи. Геймплеейно, так интересней.
 
     def reset(self):
-        """Отчищает множество позиций"""
+        """Отчищает множество позиций."""
         self.positions.clear()
 
 
 class Walls(GameObject):
-    """Класс игровых объектов Яблоко"""
+    """Класс игровых объектов Яблоко."""
 
     def __init__(self, body_color: tuple = WALLS_COLOR) -> None:
         super().__init__(body_color)
         self.positions = list()
-        # self.position = None
 
     def randomize_position(self, positions) -> None:
-        """Устанавливает случайное положение стены на игровом поле"""
+        """Устанавливает случайное положение стены на игровом поле."""
         super().randomize_position(positions)
         self.positions.append(self.position)
 
@@ -243,19 +239,16 @@ class Walls(GameObject):
         """
         if len(self.positions) != 0:
             # Всё равно в начале стену не рисуем, а когда рисуем,
-            # то по одной за раз. Предыдущие уже нарисованы
+            # то по одной за раз. Предыдущие уже нарисованы.
             self.draw_cell(self.positions[-1])
 
     def reset(self):
-        """Отчищает множество позиций"""
-        # self.position = None
+        """Отчищает множество позиций."""
         self.positions = list()
 
 
 def ate(snake, apple, skin, walls):
-    """Проверяет события поедания объекта"""
-    # Я непонимяю что я делаю вне объекта змейка, кроме Змейки никто в
-    # кушает.
+    """Проверяет события поедания объекта."""
     last = snake.last
     if apple.position == snake.get_head_position():
         snake.length += 1
@@ -263,12 +256,12 @@ def ate(snake, apple, skin, walls):
                           + list(skin.positions) + walls.positions)
         apple.randomize_position(list_positions)
         # Каждые 5 яблок ускоряют метоболизм змейки
-        # Змейка сбрасывает кожу
+        # змейка сбрасывает кожу.
         if not snake.length % 5:
             skin.add_skin(last)
         # После того как змейка станет больше 5 ячеек
         # её начинают ограничивать стены каждый раз,
-        # как она выростает на 2 ячейки
+        # как она выростает на 2 ячейки.
         if not snake.length % 2 and snake.length > 5:
             walls.randomize_position(list_positions + [apple.position])
 
@@ -291,13 +284,13 @@ def ate(snake, apple, skin, walls):
             skin.positions.discard(snake.get_head_position())
             skin.add_skin(snake.positions[-1])
             # На самом деле ошибки не будет, я подумал что это явно, но сам
-            # когда читал, понял что нужно прокоментировать
+            # когда читал, понял что нужно прокоментировать.
             skin.add_skin(snake.positions[-2])
     return True
 
 
 def front(snake) -> list:
-    """Собирает в список все занятые позиции"""
+    """Собирает в список все занятые позиции."""
     list_busy: list = [
         (
             (snake.positions[0][0] + snake.direction[0] * GRID_SIZE * before)
@@ -310,11 +303,11 @@ def front(snake) -> list:
 
 
 def handle_keys(game_object):
-    """Функция обработки действий пользователя"""
+    """Функция обработки действий пользователя."""
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
-            sys.exit()  # Равносильно raise SystemExit, но с лишним import sys
+            sys.exit()  # Равносильно raise SystemExit, но с лишним import sys.
 
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
@@ -327,7 +320,7 @@ def handle_keys(game_object):
 
 
 def pressed_shift():
-    """Возвращает коэфициент ускорения"""
+    """Возвращает коэфициент ускорения."""
     keys = pg.key.get_pressed()
     if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:
         return ACCELERATION
@@ -348,7 +341,7 @@ def restart(*args):
 
 
 def main():
-    """Выполняется если the_snake запущен напрямую"""
+    """Выполняется если the_snake запущен напрямую."""
     snake = Snake()
     apple = Apple(front(snake) + snake.positions)
     skin = Skins()
@@ -358,8 +351,7 @@ def main():
     max_points = 0
 
     while True:
-        # Изменение скорости с ростом змейки
-        # на 1 за 5 съеденных яблок
+        # Изменение скорости с ростом змейки на 1 за 5 съеденных яблок.
         game_speed = (SPEED + snake.length // 5) * pressed_shift()
         clock.tick(game_speed)
 

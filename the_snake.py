@@ -180,7 +180,7 @@ class Snake(GameObject):
 class Apple(GameObject):
     """Класс игровых объектов Яблоко."""
 
-    def __init__(self, busy, body_color: tuple = APPLE_COLOR) -> None:
+    def __init__(self, busy=list(), body_color: tuple = APPLE_COLOR) -> None:
         super().__init__(body_color)
         self.busy_positions = [busy]
         self.randomize_position(self.busy_positions)

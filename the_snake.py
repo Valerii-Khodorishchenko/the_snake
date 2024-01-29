@@ -76,26 +76,15 @@ class GameObject:
         self.position = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
         self.body_color = body_color
 
-    def draw_one_cell(self, position=None, color=None) -> None:
+    def draw_cell(self, position, color=None) -> None:
         """Отрисовывает игровые объекты на игровом поле."""
-        # Отрисовка нового сегмента
-        if position is None:
-            # Когда позиция не передаётся явно
-            position = self.position
-        if position is None:
-            # Бывает так, что стена или кожа еще не определена
-            return
-        if color is None:
-            # Эта строка на мой взгляд нужна для того, чтоб исключить
-            # дублирования кода при отрисовки повреждения головы змейки,
-            # где передаётся другой цвет.
-            color = self.body_color
-        rect = pg.Rect((position), (GRID_SIZE, GRID_SIZE))
+        color = color or self.body_color
+        rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, color, rect)
         pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
     def draw(self):
-        """Нужен для тестов."""
+        """Нужен для отрисовки произвольного наследника."""
 
     def randomize_position(self, positions) -> None:
         """Устанавливает случайное положение яблока, или стены на игровом поле,
@@ -109,10 +98,6 @@ class GameObject:
 
             if self.position not in positions:
                 break
-
-    def reset(self):
-        """Переопределяем аргументы."""
-        self.position = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
 
 
 class Snake(GameObject):
@@ -135,11 +120,10 @@ class Snake(GameObject):
         голову в начало списка positions и удаляя последний элемент, если
         длина змейки не увеличилась.
         """
-        x_position = (self.position[0]
-                      + self.direction[0] * GRID_SIZE) % SCREEN_WIDTH
-        y_position = (self.position[1]
-                      + self.direction[1] * GRID_SIZE) % SCREEN_HEIGHT
-        self.position = (x_position, y_position)
+        self.position = (
+            (self.position[0] + self.direction[0] * GRID_SIZE) % SCREEN_WIDTH,
+            (self.position[1] + self.direction[1] * GRID_SIZE) % SCREEN_HEIGHT
+        )
 
         past_length: int = len(self.positions)
         self.positions.insert(0, self.position)
@@ -148,7 +132,7 @@ class Snake(GameObject):
         elif self.length < past_length:
             # Для кожи: сбрасываю кожу, затираю хвост.
             self.last = self.positions.pop()
-            self.draw_one_cell()
+            self.draw_cell(self.position)
             self.last = self.positions.pop()
         else:
             self.last = None
@@ -157,18 +141,17 @@ class Snake(GameObject):
         """Рисуем змейку целеком"""
         # Затирание последнего сегмента.
         if self.last:
-            self.draw_one_cell(position=self.last,
-                               color=BOARD_BACKGROUND_COLOR)
+            self.draw_cell(self.last, BOARD_BACKGROUND_COLOR)
         # Создаю эффект ползанья змейки.
         for position in self.positions:
             color = (randrange(0, 55, 5), randrange(150, 255, 5), 0)
-            self.draw_one_cell(position=position, color=color)
+            self.draw_cell(position, color)
         # Четко рисую голову.
-        self.draw_one_cell()
+        self.draw_cell(self.position)
 
     def draw_damage(self):
         """Рисую клетку, в которой змея получила повреждение"""
-        self.draw_one_cell(color=SNAKE_BLOOD_COLOR)
+        self.draw_cell(self.get_head_position(), SNAKE_BLOOD_COLOR)
         pg.display.update()
 
     def get_head_position(self) -> tuple:
@@ -179,7 +162,7 @@ class Snake(GameObject):
 
     def check_collision(self, walls) -> bool:
         """Проверяет столкновение"""
-        if self.get_head_position() in self.positions[3:] + walls.positions:
+        if self.get_head_position() in self.positions[4:] + walls.positions:
             self.draw_damage()
             return True
         return False
@@ -188,7 +171,7 @@ class Snake(GameObject):
         """Cбрасывает змейку в начальное состояние после столкновения с
         собой
         """
-        super().reset()
+        self.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.positions = [self.position]
         self.length = len(self.positions)
         self.direction = RIGHT
@@ -197,23 +180,22 @@ class Snake(GameObject):
 class Apple(GameObject):
     """Класс игровых объектов Яблоко"""
 
-    def __init__(self, body_color: tuple = APPLE_COLOR) -> None:
+    def __init__(self, busy, body_color: tuple = APPLE_COLOR) -> None:
         super().__init__(body_color)
-        # Начальная позиция всех объектов, если она не переопределена, в том
-        # числе голова змейки. Передовать объект змейка нет необходимости.
-        self.randomize_position([self.position])
-        # Теперь метод .randomize_position() в родительском классе
+        self.position = (1, 1)
+        self.busy = busy
+        self.busy_positions = [busy]
+        self.randomize_position(self.busy_positions)
 
     def reset(self):
         """Задаю первое яблоко, таким образом, чтоб оно точно не стояло на
         змейке.
         """
-        super().reset()
-        self.randomize_position([self.position])
+        self.randomize_position(self.busy_positions)
 
     def draw(self):
         """Рисую яблоко"""
-        super().draw_one_cell()
+        self.draw_cell(self.position)
 
 
 class Skins(GameObject):
@@ -221,28 +203,25 @@ class Skins(GameObject):
 
     def __init__(self, body_color: tuple = SKIN_COLOR) -> None:
         super().__init__(body_color)
-        self.position = None
         self.positions = set()
 
     def add_skin(self, position):
         """Добавляет сброшенную кожу"""
-        self.position = position
-        self.positions.add(self.position)
+        self.positions.add(position)
 
     def draw(self):
         """Рисую сброшенную кожу, которая всегда остаётся за змейкой,
         и никогда не стоит на Змейке, которая стоит на Яблоке
         """
-        for self.position in self.positions:
-            super().draw_one_cell()
+        if len(self.positions) != 0:
+            for position in self.positions:
+                self.draw_cell(position)
         # Когда змейка съедает кожу, она травится, и сбрасывает
         # в два раза больше кожи. Геймплеейно, так интересней.
 
     def reset(self):
         """Отчищает множество позиций"""
-        super().reset()
-        self.position = None
-        self.positions = set()
+        self.positions.clear()
 
 
 class Walls(GameObject):
@@ -251,7 +230,7 @@ class Walls(GameObject):
     def __init__(self, body_color: tuple = WALLS_COLOR) -> None:
         super().__init__(body_color)
         self.positions = list()
-        self.position = None
+        # self.position = None
 
     def randomize_position(self, positions) -> None:
         """Устанавливает случайное положение стены на игровом поле"""
@@ -262,12 +241,14 @@ class Walls(GameObject):
         """Рисую стену, если она есть, которая не стоит на Яблоке,
         которое не стоит на Змейке.
         """
-        super().draw_one_cell()
+        if len(self.positions) != 0:
+            # Всё равно в начале стену не рисуем, а когда рисуем,
+            # то по одной за раз. Предыдущие уже нарисованы
+            self.draw_cell(self.positions[-1])
 
     def reset(self):
         """Отчищает множество позиций"""
-        super().reset()
-        self.position = None
+        # self.position = None
         self.positions = list()
 
 
@@ -278,9 +259,8 @@ def ate(snake, apple, skin, walls):
     last = snake.last
     if apple.position == snake.get_head_position():
         snake.length += 1
-        list_positions = busy_positions(
-            snake, *(snake.positions, skin.positions, walls.positions)
-        )
+        list_positions = (front(snake) + snake.positions
+                          + list(skin.positions) + walls.positions)
         apple.randomize_position(list_positions)
         # Каждые 5 яблок ускоряют метоболизм змейки
         # Змейка сбрасывает кожу
@@ -290,42 +270,42 @@ def ate(snake, apple, skin, walls):
         # её начинают ограничивать стены каждый раз,
         # как она выростает на 2 ячейки
         if not snake.length % 2 and snake.length > 5:
-            walls.randomize_position(list_positions)
+            walls.randomize_position(list_positions + [apple.position])
 
     for skin_position in list(skin.positions):
         if skin_position == snake.get_head_position():
+            # Длина змейки уменьшается на следующей строке, и значение меньше
+            # единици не пройдёт, если длина змейки была = 2,
+            # после уменьшения на еденицу в блок if
+            # программа не заходит. Длина snake.positions до следующей
+            # итерации основного цикла в main() не меняется и имеют минимум
+            # два элемента. Мне кажется что так проще реализовать отрисовку.
+            # впринципи её можно перенеси и в snake.move(), но мне показалось,
+            # что выглядеть будет еще менее четабильно, + придётся в змейке
+            # тащить кожу, а она еще и не созданна как экземпляр.
             snake.length -= 1
             if not snake.length:
                 skin.positions = set()
                 snake.draw_damage()
                 return False
             skin.positions.discard(snake.get_head_position())
-            skin.add_skin(snake.positions[-2])
             skin.add_skin(snake.positions[-1])
+            # На самом деле ошибки не будет, я подумал что это явно, но сам
+            # когда читал, понял что нужно прокоментировать
+            skin.add_skin(snake.positions[-2])
     return True
 
 
-def busy_positions(snake, *args) -> list:
+def front(snake) -> list:
     """Собирает в список все занятые позиции"""
-    list_busy: list = list()
-    # Добавляем 5 клеток перед змейкой в занятые позиции
-    # Исключаем появление объектов перед головой
-    distance = 5
-    for _ in range(distance):
-        if _ == 0:
-            old_positions = snake.positions[0]
-        else:
-            old_positions = list_busy[-1]
-
-        x_position = (old_positions[0]
-                      + snake.direction[0] * GRID_SIZE) % SCREEN_WIDTH
-        y_position = (old_positions[1]
-                      + snake.direction[1] * GRID_SIZE) % SCREEN_HEIGHT
-        position = (x_position, y_position)
-        list_busy.append(position)
-
-    for positions in args:
-        list_busy.extend(positions)
+    list_busy: list = [
+        (
+            (snake.positions[0][0] + snake.direction[0] * GRID_SIZE * before)
+            % SCREEN_WIDTH,
+            (snake.positions[0][1] + snake.direction[1] * GRID_SIZE * before)
+            % SCREEN_HEIGHT
+        )
+        for before in range(1, 5)]
     return list_busy
 
 
@@ -335,14 +315,15 @@ def handle_keys(game_object):
         if event.type == pg.QUIT:
             pg.quit()
             sys.exit()  # Равносильно raise SystemExit, но с лишним import sys
-        elif event.type == pg.KEYDOWN:
+
+        if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
                 pg.quit()
                 sys.exit()
 
-            elif event.key in TURNING_OPTIONS[game_object.direction]:
-                direction = TURNING_OPTIONS[game_object.direction][event.key]
-                return game_object.update_direction(direction)
+            if event.key in TURNING_OPTIONS[game_object.direction]:
+                return game_object.update_direction(
+                    TURNING_OPTIONS[game_object.direction][event.key])
 
 
 def pressed_shift():
@@ -369,12 +350,9 @@ def restart(*args):
 def main():
     """Выполняется если the_snake запущен напрямую"""
     snake = Snake()
-    apple = Apple()
-    # Яблоко ставится куда угодно, но не на змейку
+    apple = Apple(front(snake) + snake.positions)
     skin = Skins()
     walls = Walls()
-    # Никто тут не на кого не встаёт, все позиции определяются
-    # тогда, когда должны определяться busy_positions()
 
     points = 0
     max_points = 0

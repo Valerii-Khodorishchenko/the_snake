@@ -42,7 +42,7 @@ DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
 
-TURNING_OPTIONS = {
+TURNING = {
     LEFT: {pg.K_UP: UP, pg.K_DOWN: DOWN},
     RIGHT: {pg.K_UP: UP, pg.K_DOWN: DOWN},
     UP: {pg.K_LEFT: LEFT, pg.K_RIGHT: RIGHT},
@@ -77,7 +77,7 @@ class GameObject:
         self.body_color = body_color
 
     def draw_cell(self, position, color=None) -> None:
-        """Отрисовывает игровые объекты на игровом поле."""
+        """Отрисовывает одну заданную ячейку поля."""
         color = color or self.body_color
         rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, color, rect)
@@ -95,7 +95,6 @@ class GameObject:
                 randint(0, GRID_WIDTH - 1) * GRID_SIZE,
                 randint(0, GRID_HEIGHT - 1) * GRID_SIZE,
             )
-
             if self.position not in positions:
                 break
 
@@ -182,14 +181,13 @@ class Apple(GameObject):
 
     def __init__(self, busy=list(), body_color: tuple = APPLE_COLOR) -> None:
         super().__init__(body_color)
-        self.busy_positions = [busy]
-        self.randomize_position(self.busy_positions)
+        self.randomize_position(busy)
 
-    def reset(self):
-        """Задаю первое яблоко, таким образом, чтоб оно точно не стояло на
-        змейке.
-        """
-        self.randomize_position(self.busy_positions)
+    # def reset(self):
+    #     """Задаю первое яблоко, таким образом, чтоб оно точно не стояло на
+    #     змейке.
+    #     """
+    #     self.randomize_position(self.busy_positions)
 
     def draw(self):
         """Рисую яблоко."""
@@ -290,7 +288,7 @@ def ate(snake, apple, skin, walls):
 
 
 def front(snake) -> list:
-    """Собирает в список все занятые позиции."""
+    """Определяет позиции перед змейкой."""
     list_busy: list = [
         (
             (snake.positions[0][0] + snake.direction[0] * GRID_SIZE * before)
@@ -314,9 +312,9 @@ def handle_keys(game_object):
                 pg.quit()
                 sys.exit()
 
-            if event.key in TURNING_OPTIONS[game_object.direction]:
+            if event.key in TURNING[game_object.direction]:
                 return game_object.update_direction(
-                    TURNING_OPTIONS[game_object.direction][event.key])
+                    TURNING[game_object.direction][event.key])
 
 
 def pressed_shift():
@@ -359,7 +357,8 @@ def main():
         snake.move()
         if not ate(snake, apple, skin, walls) or snake.check_collision(walls):
             clock.tick(1)
-            restart(snake, apple, skin, walls)
+            restart(snake, skin, walls)
+            apple.randomize_position(snake.positions)
             points = 0
             continue
         draw(snake, apple, skin, walls)
